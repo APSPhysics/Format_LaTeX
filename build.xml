@@ -1,0 +1,119 @@
+<project name="format-latex" default="dist" basedir=".">
+    <description>
+        A plugin including LaTeX document formats
+    </description>
+
+  <!-- Prevent Ant from warning about includeantruntime not being set -->
+  <property name="build.sysclasspath" value="ignore" />
+
+  <!-- set global properties for this build -->
+  <property name="src" location="src"/>
+  <property name="build" location="classes"/>
+  <property name="dist"  location="dist"/>
+  <property name="jar.location" location="format-latex.jar" />
+  <property name="doc.dir" location="doc" />
+  <property name="javadoc.dir" location="${doc.dir}/javadoc" />
+
+  <property name="gate.home" location="/Users/apsmith/src/GATE/gate-7.1-build4485-SRC" />
+  <property name="gate.jar" location="${gate.home}/bin/gate.jar" />
+  <property name="gate.lib" location="${gate.home}/lib" />
+
+  <property name="junit.jar" location="/Users/Shared/junit4/junit-4.11.jar"/>
+
+  <path id="compile.classpath">
+    <pathelement location="${gate.jar}" />
+    <fileset dir="${gate.lib}" >
+      <include name="**/*.jar" />
+      <include name="**/*.zip" />
+    </fileset>
+  </path>
+
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init"
+        description="compile the source " >
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac srcdir="${src}" destdir="${build}" source="1.6" target="1.6"
+           classpathref="compile.classpath" >
+           <exclude name="test/**/*"/>
+    </javac>
+  </target>
+
+  <!-- Build JavaDoc documentation -->
+  <target name="doc.prepare">
+    <mkdir dir="${javadoc.dir}" />
+  </target>
+
+  <target name="javadoc" depends="doc.prepare">
+    <javadoc destdir="${javadoc.dir}" packagenames="*"
+             classpathref="compile.classpath"
+             encoding="UTF-8"
+             windowtitle="${plugin.name} JavaDoc"
+             source="1.6">
+      <sourcepath>
+        <pathelement location="${src}" />
+      </sourcepath>
+      <link href="http://docs.oracle.com/javase/6/docs/api/" />
+      <link href="http://gate.ac.uk/gate/doc/javadoc/" />
+    </javadoc>
+  </target>
+
+
+  <target name="dist" depends="compile"
+        description="generate the distribution" >
+    <!-- Create the distribution directory -->
+    <mkdir dir="${dist}/lib"/>
+
+    <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
+    <jar jarfile="${jar.location}" basedir="${build}">
+           <exclude name="test"/>
+           <exclude name="test/**/*"/>
+    </jar>
+  </target>
+
+  <target name="clean.classes"
+        description="clean up" >
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+
+  <target name="clean" depends="clean.classes" >
+    <!-- full clean also removes the generated JAR file -->
+    <delete file="${jar.location}" />
+  </target>
+
+  <target name="test.compile" depends="compile">
+    <mkdir dir="${build}/test" />
+    <javac srcdir="${src}/test" destdir="${build}/test"
+             classpathref="compile.classpath">
+        <classpath path="${build}" />
+        <classpath path="${junit.jar}" />
+    </javac>
+  </target>
+
+  <target name="test" depends="test.compile">
+    <junit dir="${basedir}" printsummary="yes" haltonfailure="yes" showoutput="yes" fork="yes" forkMode="once">
+       <classpath>
+         <path refid="compile.classpath"/>
+         <path path="${junit.jar}"/>
+         <path path="${build}"/>
+       </classpath>
+       <batchtest>
+         <fileset dir="src/test">
+            <include name="**/*Test.java" />
+         </fileset>
+       </batchtest>
+    </junit>
+  </target>
+
+  <!-- Targets used by the main GATE build file -->
+  <target name="build" depends="dist" />
+  <target name="distro.prepare" depends="clean.classes" />
+</project>
+
